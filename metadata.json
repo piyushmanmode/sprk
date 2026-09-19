@@ -1,0 +1,6 @@
+{
+  "name": "Spark",
+  "description": "Daily habits and streak tracker app with Android home screen widgets for Streaks, Tasks, Flame Motivation, and Heatmap.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

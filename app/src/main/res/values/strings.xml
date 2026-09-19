@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">Spark</string>
+    <string name="widget_streaks_desc">Track your active habit streaks at a glance</string>
+    <string name="widget_tasks_desc">Quickly review and check off today\'s habits</string>
+    <string name="widget_flame_desc">Daily motivation spark and streak counter</string>
+    <string name="widget_heatmap_desc">Visual monthly consistency heatmap</string>
+</resources>

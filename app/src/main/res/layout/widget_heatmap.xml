@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_heatmap_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_card"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Top Header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:contentDescription="Matrix"
+            android:src="@drawable/ic_flame_small" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:text="CONSISTENCY MAP"
+            android:textColor="#FF1E130D"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/widget_heatmap_count"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/widget_item_bg"
+            android:paddingHorizontal="8dp"
+            android:paddingVertical="3dp"
+            android:text="27 Days Total"
+            android:textColor="#FFFF5C1C"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Dot Grid representation -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_marginTop="8dp"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical">
+
+        <!-- Row 1 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginVertical="2dp"
+            android:orientation="horizontal">
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_inactive" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+        </LinearLayout>
+
+        <!-- Row 2 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginVertical="2dp"
+            android:orientation="horizontal">
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_inactive" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+        </LinearLayout>
+
+        <!-- Row 3 -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:layout_marginVertical="2dp"
+            android:orientation="horizontal">
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_inactive" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+            <ImageView android:layout_width="10dp" android:layout_height="10dp" android:layout_margin="3dp" android:src="@drawable/widget_dot_active" android:contentDescription="dot"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Footer -->
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="end"
+        android:text="View Full Month Overview →"
+        android:textColor="#FFFF5C1C"
+        android:textSize="11sp"
+        android:textStyle="bold" />
+</LinearLayout>
