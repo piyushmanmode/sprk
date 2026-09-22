@@ -83,7 +83,7 @@ fun CompletionCelebrationDialog(
                 Spacer(modifier = Modifier.height(6.dp))
 
                 Text(
-                    text = "You've Completed All Your Streaks",
+                    text = "You've Completed All Your Habits Today!",
                     fontSize = 15.sp,
                     color = SparkTextSecondary,
                     textAlign = TextAlign.Center

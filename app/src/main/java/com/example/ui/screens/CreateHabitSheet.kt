@@ -77,10 +77,12 @@ fun CreateHabitSheet(
     var targetDays by remember { mutableIntStateOf(60) }
     var reminderEnabled by remember { mutableStateOf(true) }
     var reminderFrequency by remember { mutableStateOf("Daily") }
-    var reminderTime by remember { mutableStateOf("Mon-Sun 10:00 AM") }
+    var reminderTime by remember { mutableStateOf("10:00 AM") }
     var category by remember { mutableStateOf("Growth") }
+    var titleTouched by remember { mutableStateOf(false) }
+    var showMoreOptions by remember { mutableStateOf(false) }
 
-    val categories = listOf("Reading", "Fitness", "Design", "Mindfulness", "Coding", "Health")
+    val categories = listOf("Growth", "Fitness", "Reading", "Health", "Mindfulness", "Coding")
     val goalOptions = listOf(30, 50, 60, 100)
 
     Box(
@@ -127,7 +129,7 @@ fun CreateHabitSheet(
                 Spacer(modifier = Modifier.weight(1f))
 
                 Text(
-                    text = "Create a Streak",
+                    text = "Create Habit",
                     fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
@@ -157,22 +159,31 @@ fun CreateHabitSheet(
                 ) {
                     // Title Input
                     Text(
-                        text = "Write your streak title",
+                        text = "Habit Title",
                         fontSize = 14.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = SparkTextPrimary
                     )
                     Spacer(modifier = Modifier.height(8.dp))
+                    val isTitleError = titleTouched && title.isBlank()
                     OutlinedTextField(
                         value = title,
-                        onValueChange = { title = it },
-                        placeholder = { Text("e.g. Write UX Design Journal", color = Color(0xFFAAA09A)) },
+                        onValueChange = {
+                            title = it
+                            titleTouched = true
+                        },
+                        placeholder = { Text("e.g. Read 20 pages or Daily Workout", color = Color(0xFFAAA09A)) },
                         shape = RoundedCornerShape(16.dp),
+                        isError = isTitleError,
+                        supportingText = if (isTitleError) {
+                            { Text("Habit title is required", color = Color(0xFFD32F2F), fontSize = 12.sp) }
+                        } else null,
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = SparkOrange,
                             unfocusedBorderColor = SparkCardBorder,
                             focusedContainerColor = SparkPeachLight.copy(alpha = 0.3f),
-                            unfocusedContainerColor = Color(0xFFFAF7F5)
+                            unfocusedContainerColor = Color(0xFFFAF7F5),
+                            errorBorderColor = Color(0xFFD32F2F)
                         ),
                         singleLine = true,
                         modifier = Modifier
@@ -413,7 +424,7 @@ fun CreateHabitSheet(
 
                     Spacer(modifier = Modifier.height(28.dp))
 
-                    // "Start My Streak" Primary CTA Button
+                    // Primary CTA Button
                     Button(
                         onClick = {
                             if (title.isNotBlank()) {
@@ -422,12 +433,13 @@ fun CreateHabitSheet(
                                     description,
                                     category,
                                     targetDays,
-                                    reminderFrequency,
+                                    if (reminderEnabled) reminderFrequency else "",
                                     reminderTime
                                 )
+                            } else {
+                                titleTouched = true
                             }
                         },
-                        enabled = title.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = SparkOrange
                         ),
@@ -438,7 +450,7 @@ fun CreateHabitSheet(
                             .testTag("start_my_streak_button")
                     ) {
                         Text(
-                            text = "Start My Streak",
+                            text = "Create Habit",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White

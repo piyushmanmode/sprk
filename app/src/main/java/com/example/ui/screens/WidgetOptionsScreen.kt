@@ -771,7 +771,7 @@ private fun LiveWidgetPreviewCard(
                                 .padding(horizontal = 8.dp, vertical = 3.dp)
                         ) {
                             Text(
-                                text = "$maxStreak Days Streak",
+                                text = "$maxStreak ${if (maxStreak == 1) "Day" else "Days"} Streak",
                                 fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = badgeTextColor

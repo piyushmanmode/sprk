@@ -60,9 +60,13 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
     val uiState: StateFlow<SparkUiState> = _uiState.asStateFlow()
 
     init {
+        com.example.reminder.HabitReminderScheduler.createNotificationChannel(application)
         viewModelScope.launch {
             // Seed initial trophy milestones if needed without clearing existing habits/completions
             repository.seedInitialDataIfEmpty()
+            if (_uiState.value.notificationsEnabled) {
+                com.example.reminder.HabitReminderScheduler.rescheduleAllReminders(application)
+            }
         }
 
         viewModelScope.launch {
@@ -162,7 +166,15 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
                 reminderTime = reminderTime,
                 timeSpentMinutes = 0
             )
-            repository.createHabit(newHabit)
+            val habitId = repository.createHabit(newHabit)
+            if (reminderFreq.isNotBlank() && _uiState.value.notificationsEnabled) {
+                com.example.reminder.HabitReminderScheduler.scheduleReminder(
+                    getApplication(),
+                    habitId,
+                    newHabit.title,
+                    newHabit.reminderTime
+                )
+            }
             com.example.widget.WidgetUpdater.updateAllWidgets(getApplication())
             _uiState.value = _uiState.value.copy(showCreateHabitSheet = false)
         }
@@ -170,6 +182,7 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
 
     fun deleteHabit(habitId: Long) {
         viewModelScope.launch {
+            com.example.reminder.HabitReminderScheduler.cancelReminder(getApplication(), habitId)
             repository.deleteHabit(habitId)
             com.example.widget.WidgetUpdater.updateAllWidgets(getApplication())
             if (_uiState.value.selectedHabitForDetail?.habit?.id == habitId) {
@@ -193,6 +206,11 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
             userEmail = email,
             notificationsEnabled = notifications
         )
+        if (notifications) {
+            com.example.reminder.HabitReminderScheduler.rescheduleAllReminders(getApplication())
+        } else {
+            com.example.reminder.HabitReminderScheduler.cancelAllReminders(getApplication())
+        }
     }
 
     fun saveSelectedProfilePhoto(uri: Uri) {
@@ -232,6 +250,7 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetDemoData() {
         viewModelScope.launch {
+            com.example.reminder.HabitReminderScheduler.cancelAllReminders(getApplication())
             repository.clearAllData()
             repository.seedInitialDataIfEmpty()
             com.example.widget.WidgetUpdater.updateAllWidgets(getApplication())

@@ -5,17 +5,21 @@
 # For more details, see
 #   http://developer.android.com/guide/developing/tools/proguard.html
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Room database rules
+-keep class * extends androidx.room.RoomDatabase
+-dontwarn androidx.room.paging.**
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# Keep models and entities for Room and state
+-keep class com.example.model.** { *; }
+-keep class com.example.data.** { *; }
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# App Widgets (system calls these via intent filter reflection)
+-keep class com.example.widget.** extends android.appwidget.AppWidgetProvider { *; }
+
+# Kotlin Coroutines internal dispatchers
+-keepnames class kotlinx.coroutines.internal.MainDispatcherFactory {}
+-keepnames class kotlinx.coroutines.CoroutineExceptionHandler {}
+
+# Broadcast Receivers (AlarmManager and Boot receivers called by Android OS)
+-keep class com.example.reminder.** extends android.content.BroadcastReceiver { *; }
+

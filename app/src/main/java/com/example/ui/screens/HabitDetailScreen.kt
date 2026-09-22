@@ -177,7 +177,7 @@ fun HabitDetailScreen(
 
                     // Current Streak and Record Streak Header
                     Text(
-                        text = "${habitWithStats.currentStreak} Days Streak",
+                        text = "${habitWithStats.currentStreak} ${if (habitWithStats.currentStreak == 1) "Day" else "Days"} Streak",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = SparkTextPrimary

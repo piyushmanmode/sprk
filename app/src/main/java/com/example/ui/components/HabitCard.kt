@@ -105,7 +105,7 @@ fun HabitCard(
                         SparkFlameIcon(size = 14.dp, tint = SparkFlame)
                         Spacer(modifier = Modifier.width(5.dp))
                         Text(
-                            text = "${habitWithStats.currentStreak} Days Streak",
+                            text = "${habitWithStats.currentStreak} ${if (habitWithStats.currentStreak == 1) "Day" else "Days"} Streak",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.SemiBold,
                             color = SparkFlame

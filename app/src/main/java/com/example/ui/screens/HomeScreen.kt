@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
@@ -352,7 +353,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(6.dp))
                         Text(
-                            text = "Tap below to start your first daily streak!",
+                            text = "Create your first habit to ignite your daily spark!",
                             fontSize = 14.sp,
                             color = Color(0xFF827067)
                         )
@@ -360,9 +361,16 @@ fun HomeScreen(
                         Button(
                             onClick = onAddHabitClick,
                             colors = ButtonDefaults.buttonColors(containerColor = SparkOrange),
-                            shape = RoundedCornerShape(24.dp)
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.testTag("create_first_habit_button")
                         ) {
-                            Text("Create a Streak", fontWeight = FontWeight.SemiBold)
+                            Icon(
+                                imageVector = Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Create Your First Habit", fontWeight = FontWeight.SemiBold)
                         }
                     }
                 }

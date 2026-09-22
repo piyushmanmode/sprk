@@ -89,6 +89,7 @@ fun ProfileScreen(
     modifier: Modifier = Modifier
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
+    var showResetConfirmDialog by remember { mutableStateOf(false) }
     var editName by remember { mutableStateOf(userName) }
     var editEmail by remember { mutableStateOf(userEmail) }
 
@@ -241,14 +242,14 @@ fun ProfileScreen(
                             ) {
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = "Push Notification",
+                                        text = "Daily Reminders",
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = SparkTextPrimary
                                     )
                                     Spacer(modifier = Modifier.height(2.dp))
                                     Text(
-                                        text = "Get Notify For Daily Streaks",
+                                        text = "Get notified for daily habit check-ins",
                                         fontSize = 12.sp,
                                         color = SparkTextSecondary
                                     )
@@ -316,7 +317,7 @@ fun ProfileScreen(
                             }
 
                             Button(
-                                onClick = onResetDemoData,
+                                onClick = { showResetConfirmDialog = true },
                                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFAF2EE)),
                                 shape = RoundedCornerShape(16.dp),
                                 modifier = Modifier.weight(1f)
@@ -384,6 +385,37 @@ fun ProfileScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showEditDialog = false }) {
+                    Text("Cancel", color = SparkTextSecondary)
+                }
+            }
+        )
+    }
+
+    // Reset Demo Data Confirmation Dialog (DEF-008)
+    if (showResetConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showResetConfirmDialog = false },
+            title = { Text("Reset to Demo Data", fontWeight = FontWeight.Bold) },
+            text = {
+                Text(
+                    text = "This will restore starter demo habits and reset all completion progress and trophies. Are you sure you want to proceed?",
+                    fontSize = 14.sp,
+                    color = SparkTextPrimary
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        onResetDemoData()
+                        showResetConfirmDialog = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F))
+                ) {
+                    Text("Reset", color = Color.White)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showResetConfirmDialog = false }) {
                     Text("Cancel", color = SparkTextSecondary)
                 }
             }

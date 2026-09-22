@@ -122,7 +122,7 @@ class HabitRepository(
             val trophies = listOf(
                 Trophy(
                     id = "streak_7",
-                    title = "07 days Streaks",
+                    title = "7-Day Streak",
                     subtitle = "7-Day Milestone Trophy",
                     description = "Keep any habit streak alive for 7 consecutive days to unlock",
                     requiredDays = 7,
@@ -133,7 +133,7 @@ class HabitRepository(
                 ),
                 Trophy(
                     id = "streak_15",
-                    title = "15 days Streaks",
+                    title = "15-Day Streak",
                     subtitle = "15-Day Milestone Trophy",
                     description = "Maintain unwavering consistency for 15 full days to unlock",
                     requiredDays = 15,
@@ -144,7 +144,7 @@ class HabitRepository(
                 ),
                 Trophy(
                     id = "streak_30",
-                    title = "30 days Streaks",
+                    title = "30-Day Streak",
                     subtitle = "Monthly Flame Champion",
                     description = "Achieve a monumental 30-day streak unbroken to unlock",
                     requiredDays = 30,
@@ -155,7 +155,7 @@ class HabitRepository(
                 ),
                 Trophy(
                     id = "streak_60",
-                    title = "60 days Grandmaster",
+                    title = "60-Day Grandmaster",
                     subtitle = "60-Day Habit Achiever",
                     description = "Complete an entire 60-day streak journey to true mastery to unlock",
                     requiredDays = 60,
@@ -169,18 +169,31 @@ class HabitRepository(
         }
     }
 
-    private fun calculateStreaks(completions: Set<Long>, todayEpochDay: Long): Pair<Int, Int> {
+    fun calculateStreaks(completions: Set<Long>, todayEpochDay: Long): Pair<Int, Int> {
         if (completions.isEmpty()) return Pair(0, 0)
 
-        // Current streak: counts backwards from today (or yesterday if today isn't done yet)
-        var checkDay = if (completions.contains(todayEpochDay)) todayEpochDay else todayEpochDay - 1
-        var currentStreak = 0
-        while (completions.contains(checkDay)) {
-            currentStreak++
-            checkDay--
+        // Determine starting day for current streak:
+        // 1. If today is completed, check if tomorrow was also completed (e.g. timezone shift ahead).
+        // 2. Otherwise start from today.
+        // 3. If today is not completed, start from yesterday (grace period until end of day).
+        // 4. If neither today nor yesterday is completed, the streak is broken (0).
+        val startDay: Long? = when {
+            completions.contains(todayEpochDay + 1) && completions.contains(todayEpochDay) -> todayEpochDay + 1
+            completions.contains(todayEpochDay) -> todayEpochDay
+            completions.contains(todayEpochDay - 1) -> todayEpochDay - 1
+            else -> null
         }
 
-        // Longest streak
+        var currentStreak = 0
+        if (startDay != null) {
+            var checkDay = startDay
+            while (completions.contains(checkDay)) {
+                currentStreak++
+                checkDay--
+            }
+        }
+
+        // Longest streak across all historical completions
         val sortedDays = completions.sorted()
         var longestStreak = 0
         var currentRun = 0
