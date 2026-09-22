@@ -16,20 +16,25 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material.icons.filled.Today
 import androidx.compose.material.icons.filled.Widgets
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -46,8 +51,13 @@ import com.example.model.HabitWithStats
 import com.example.ui.components.HabitCard
 import com.example.ui.components.SparkFlameIcon
 import com.example.ui.theme.SparkCanvas
+import com.example.ui.theme.SparkFlame
 import com.example.ui.theme.SparkOrange
+import com.example.ui.theme.SparkPeachLight
+import java.time.LocalDate
 import java.time.LocalTime
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun HomeScreen(
@@ -58,12 +68,25 @@ fun HomeScreen(
     onToggleComplete: (Long) -> Unit,
     onAddHabitClick: () -> Unit,
     onWidgetOptionsClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    selectedEpochDay: Long = LocalDate.now(ZoneId.systemDefault()).toEpochDay(),
+    onSelectDate: (Long) -> Unit = {},
+    onToggleDay: ((Long, Long) -> Unit)? = null
 ) {
     val greetingTime = when (LocalTime.now().hour) {
         in 5..11 -> "Good Morning"
         in 12..16 -> "Good Afternoon"
         else -> "Good Evening"
+    }
+
+    val today = LocalDate.now(ZoneId.systemDefault())
+    val todayEpoch = today.toEpochDay()
+    val isViewingToday = selectedEpochDay == todayEpoch
+    val selectedDate = LocalDate.ofEpochDay(selectedEpochDay)
+
+    // Last 7 days for the interactive date selector bar
+    val past7Days = remember(todayEpoch) {
+        (6 downTo 0).map { today.minusDays(it.toLong()) }
     }
 
     Box(
@@ -75,7 +98,7 @@ fun HomeScreen(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(260.dp)
+                .height(300.dp)
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
@@ -169,7 +192,7 @@ fun HomeScreen(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 20.dp, vertical = 6.dp)
+                    .padding(horizontal = 20.dp, vertical = 4.dp)
             ) {
                 Text(
                     text = "$greetingTime ${userName.split(" ").firstOrNull() ?: userName}",
@@ -177,17 +200,134 @@ fun HomeScreen(
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "Keep the streak alive,\nspark your daily motivation.",
                     color = Color.White,
-                    fontSize = 22.sp,
+                    fontSize = 20.sp,
                     fontWeight = FontWeight.Bold,
-                    lineHeight = 28.sp
+                    lineHeight = 26.sp
                 )
             }
 
-            Spacer(modifier = Modifier.height(14.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Interactive Day Carousel / Date Bar
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                past7Days.forEach { date ->
+                    val dayEpoch = date.toEpochDay()
+                    val isSelected = dayEpoch == selectedEpochDay
+                    val isDayToday = dayEpoch == todayEpoch
+                    val completedCountOnDay = habits.count { it.recentCompletions.contains(dayEpoch) }
+                    val dayLabel = if (isDayToday) "Today" else date.dayOfWeek.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(
+                                when {
+                                    isSelected -> Color.White
+                                    isDayToday -> Color.White.copy(alpha = 0.28f)
+                                    else -> Color.White.copy(alpha = 0.16f)
+                                }
+                            )
+                            .clickable { onSelectDate(dayEpoch) }
+                            .padding(horizontal = 8.dp, vertical = 7.dp)
+                    ) {
+                        Text(
+                            text = dayLabel,
+                            fontSize = 10.sp,
+                            fontWeight = if (isSelected || isDayToday) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isSelected) SparkFlame else Color.White
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(24.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    when {
+                                        isSelected && completedCountOnDay > 0 -> SparkOrange
+                                        isSelected -> Color(0xFFF7EBE4)
+                                        completedCountOnDay > 0 -> Color.White
+                                        else -> Color.White.copy(alpha = 0.25f)
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (completedCountOnDay > 0) {
+                                SparkFlameIcon(
+                                    size = 13.dp,
+                                    tint = if (isSelected) Color.White else SparkFlame
+                                )
+                            } else {
+                                Text(
+                                    text = "${date.dayOfMonth}",
+                                    fontSize = 10.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = if (isSelected) SparkFlame else Color.White
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // Past Day Banner indicator (if viewing a past day)
+            if (!isViewingToday) {
+                Surface(
+                    shape = RoundedCornerShape(14.dp),
+                    color = Color.White,
+                    shadowElevation = 3.dp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 20.dp, vertical = 4.dp)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            SparkFlameIcon(size = 16.dp, tint = SparkFlame)
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Viewing: ${selectedDate.format(DateTimeFormatter.ofPattern("EEE, MMM d"))}",
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFF1E130D)
+                            )
+                        }
+
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(12.dp))
+                                .background(SparkPeachLight)
+                                .clickable { onSelectDate(todayEpoch) }
+                                .padding(horizontal = 10.dp, vertical = 4.dp)
+                        ) {
+                            Text(
+                                text = "Back to Today",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = SparkFlame
+                            )
+                        }
+                    }
+                }
+            }
 
             // Habit Cards List
             if (habits.isEmpty()) {
@@ -239,6 +379,14 @@ fun HomeScreen(
                             habitWithStats = habitWithStats,
                             onCardClick = { onCardClick(habitWithStats) },
                             onToggleComplete = { onToggleComplete(habitWithStats.habit.id) },
+                            selectedEpochDay = selectedEpochDay,
+                            onToggleDay = { dayEpoch ->
+                                if (onToggleDay != null) {
+                                    onToggleDay(habitWithStats.habit.id, dayEpoch)
+                                } else {
+                                    onSelectDate(dayEpoch)
+                                }
+                            },
                             modifier = Modifier.testTag("habit_card_${habitWithStats.habit.id}")
                         )
                     }

@@ -336,7 +336,25 @@ fun ProfileScreen(
             onDismissRequest = { showEditDialog = false },
             title = { Text("Account Details", fontWeight = FontWeight.Bold) },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .clip(CircleShape)
+                            .border(2.dp, SparkOrange, CircleShape)
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.avatar_user),
+                            contentDescription = "Profile Photo",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
                     OutlinedTextField(
                         value = editName,
                         onValueChange = { editName = it },

@@ -21,10 +21,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.io.File
 
+import java.time.LocalDate
+import java.time.ZoneId
+
 data class SparkUiState(
     val habits: List<HabitWithStats> = emptyList(),
     val trophies: List<Trophy> = emptyList(),
     val currentTab: NavTab = NavTab.HOME,
+    val selectedDateEpochDay: Long = LocalDate.now(ZoneId.systemDefault()).toEpochDay(),
     val showCreateHabitSheet: Boolean = false,
     val showCelebrationDialog: Boolean = false,
     val showStreaksOverview: Boolean = false,
@@ -57,12 +61,7 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         viewModelScope.launch {
-            val hasClearedPreseeded = prefs.getBoolean("has_cleared_preseeded_plain_v1", false)
-            if (!hasClearedPreseeded) {
-                // Wipe any old pre-seeded template habits for a clean, plain experience
-                repository.clearAllData()
-                prefs.edit().putBoolean("has_cleared_preseeded_plain_v1", true).apply()
-            }
+            // Seed initial trophy milestones if needed without clearing existing habits/completions
             repository.seedInitialDataIfEmpty()
         }
 
@@ -124,12 +123,20 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
         _uiState.value = _uiState.value.copy(showCelebrationDialog = true)
     }
 
+    fun setSelectedDate(epochDay: Long) {
+        _uiState.value = _uiState.value.copy(selectedDateEpochDay = epochDay)
+    }
+
     fun toggleHabitCompletion(habitId: Long) {
+        toggleHabitCompletionForDate(habitId, _uiState.value.selectedDateEpochDay)
+    }
+
+    fun toggleHabitCompletionForDate(habitId: Long, dateEpochDay: Long) {
         viewModelScope.launch {
-            val wasAdded = repository.toggleHabitCompletionToday(habitId)
+            val wasAdded = repository.toggleHabitCompletionForDate(habitId, dateEpochDay)
             com.example.widget.WidgetUpdater.updateAllWidgets(getApplication())
             if (wasAdded) {
-                val allCompleted = repository.checkAllCompletedToday()
+                val allCompleted = repository.checkAllCompletedForDate(dateEpochDay)
                 if (allCompleted) {
                     _uiState.value = _uiState.value.copy(showCelebrationDialog = true)
                 }

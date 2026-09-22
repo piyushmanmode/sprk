@@ -43,16 +43,20 @@ class HabitRepository(
 
     suspend fun toggleHabitCompletionToday(habitId: Long): Boolean {
         val todayEpochDay = LocalDate.now(ZoneId.systemDefault()).toEpochDay()
-        val isCompleted = habitDao.countCompletion(habitId, todayEpochDay) > 0
+        return toggleHabitCompletionForDate(habitId, todayEpochDay)
+    }
+
+    suspend fun toggleHabitCompletionForDate(habitId: Long, dateEpochDay: Long): Boolean {
+        val isCompleted = habitDao.countCompletion(habitId, dateEpochDay) > 0
 
         if (isCompleted) {
-            habitDao.deleteCompletion(habitId, todayEpochDay)
+            habitDao.deleteCompletion(habitId, dateEpochDay)
             return false
         } else {
             habitDao.insertCompletion(
                 HabitCompletion(
                     habitId = habitId,
-                    dateEpochDay = todayEpochDay
+                    dateEpochDay = dateEpochDay
                 )
             )
             checkAndUnlockTrophies()
@@ -61,10 +65,14 @@ class HabitRepository(
     }
 
     suspend fun checkAllCompletedToday(): Boolean {
+        val todayEpochDay = LocalDate.now(ZoneId.systemDefault()).toEpochDay()
+        return checkAllCompletedForDate(todayEpochDay)
+    }
+
+    suspend fun checkAllCompletedForDate(dateEpochDay: Long): Boolean {
         val habits = habitDao.getAllHabits().first()
         if (habits.isEmpty()) return false
-        val todayEpochDay = LocalDate.now(ZoneId.systemDefault()).toEpochDay()
-        val completions = habitDao.getAllCompletions().first().filter { it.dateEpochDay == todayEpochDay }
+        val completions = habitDao.getAllCompletions().first().filter { it.dateEpochDay == dateEpochDay }
         val completedHabitIds = completions.map { it.habitId }.toSet()
         return habits.all { completedHabitIds.contains(it.id) }
     }

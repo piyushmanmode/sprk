@@ -65,7 +65,8 @@ fun HabitDetailScreen(
     onBack: () -> Unit,
     onToggleComplete: () -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onToggleDay: ((Long) -> Unit)? = null
 ) {
     val habit = habitWithStats.habit
     val today = LocalDate.now(ZoneId.systemDefault())
@@ -174,9 +175,9 @@ fun HabitDetailScreen(
 
                     Spacer(modifier = Modifier.height(16.dp))
 
-                    // Current Streak Text
+                    // Current Streak and Record Streak Header
                     Text(
-                        text = "${habitWithStats.currentStreak} Days Streaks",
+                        text = "${habitWithStats.currentStreak} Days Streak",
                         fontSize = 28.sp,
                         fontWeight = FontWeight.ExtraBold,
                         color = SparkTextPrimary
@@ -184,23 +185,30 @@ fun HabitDetailScreen(
 
                     Spacer(modifier = Modifier.height(4.dp))
 
-                    val daysToTrophy = maxOf(0, 7 - (habitWithStats.currentStreak % 7))
+                    val streakSubtitle = if (habitWithStats.longestStreak > habitWithStats.currentStreak) {
+                        "Personal Record: ${habitWithStats.longestStreak} days! Tap any day below to view or log completions."
+                    } else if (habitWithStats.currentStreak > 0) {
+                        "Your current streak is your all-time personal best! Keep it burning!"
+                    } else {
+                        "Tap today (or any past day below) to log completions and revive your streak!"
+                    }
                     Text(
-                        text = if (daysToTrophy == 0) "Trophy earned! Next milestone approaching!" else "Great job! Just $daysToTrophy more days to earn your trophy.",
+                        text = streakSubtitle,
                         fontSize = 13.sp,
                         color = SparkTextSecondary,
                         textAlign = TextAlign.Center
                     )
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(20.dp))
 
-                    // Weekly 7-Day Day Pills Strip
+                    // Weekly 7-Day Day Pills Strip (Clickable to log/toggle past streaks)
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
                         past7Days.forEach { date ->
-                            val isDone = habitWithStats.recentCompletions.contains(date.toEpochDay())
+                            val dayEpoch = date.toEpochDay()
+                            val isDone = habitWithStats.recentCompletions.contains(dayEpoch)
                             val dayName = date.dayOfWeek.name.take(3).lowercase().replaceFirstChar { it.uppercase() }
                             val isCurrentToday = date == today
 
@@ -214,12 +222,19 @@ fun HabitDetailScreen(
                                         if (isCurrentToday) SparkOrange else Color.Transparent,
                                         RoundedCornerShape(20.dp)
                                     )
+                                    .clickable {
+                                        if (onToggleDay != null) {
+                                            onToggleDay(dayEpoch)
+                                        } else if (isCurrentToday) {
+                                            onToggleComplete()
+                                        }
+                                    }
                                     .padding(vertical = 10.dp, horizontal = 8.dp)
                             ) {
                                 Text(
-                                    text = dayName,
+                                    text = if (isCurrentToday) "Today" else dayName,
                                     fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium,
+                                    fontWeight = if (isCurrentToday) FontWeight.Bold else FontWeight.Medium,
                                     color = if (isDone) SparkFlame else SparkTextSecondary
                                 )
 
@@ -249,10 +264,10 @@ fun HabitDetailScreen(
 
                     Spacer(modifier = Modifier.height(24.dp))
 
-                    // Goal Stats Two-Column Cards
+                    // Goal Stats Three-Column Cards
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(14.dp)
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         Card(
                             shape = RoundedCornerShape(16.dp),
@@ -260,17 +275,17 @@ fun HabitDetailScreen(
                             border = BorderStroke(1.dp, SparkCardBorder),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = "${habit.targetDays} Days",
-                                    fontSize = 20.sp,
+                                    text = "${habitWithStats.currentStreak}d",
+                                    fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
-                                    color = SparkTextPrimary
+                                    color = SparkFlame
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Streaks Goal",
-                                    fontSize = 12.sp,
+                                    text = "Current",
+                                    fontSize = 11.sp,
                                     color = SparkTextSecondary
                                 )
                             }
@@ -282,17 +297,39 @@ fun HabitDetailScreen(
                             border = BorderStroke(1.dp, SparkCardBorder),
                             modifier = Modifier.weight(1f)
                         ) {
-                            Column(modifier = Modifier.padding(16.dp)) {
+                            Column(modifier = Modifier.padding(12.dp)) {
                                 Text(
-                                    text = "${habitWithStats.totalCompletedDays} Days",
-                                    fontSize = 20.sp,
+                                    text = "${habitWithStats.longestStreak}d",
+                                    fontSize = 18.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color(0xFFE65100)
+                                )
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = "Best Record",
+                                    fontSize = 11.sp,
+                                    color = SparkTextSecondary
+                                )
+                            }
+                        }
+
+                        Card(
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF7F2)),
+                            border = BorderStroke(1.dp, SparkCardBorder),
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Column(modifier = Modifier.padding(12.dp)) {
+                                Text(
+                                    text = "${habitWithStats.totalCompletedDays}d",
+                                    fontSize = 18.sp,
                                     fontWeight = FontWeight.Bold,
                                     color = SparkOrange
                                 )
                                 Spacer(modifier = Modifier.height(2.dp))
                                 Text(
-                                    text = "Completed",
-                                    fontSize = 12.sp,
+                                    text = "Total Done",
+                                    fontSize = 11.sp,
                                     color = SparkTextSecondary
                                 )
                             }
@@ -351,7 +388,103 @@ fun HabitDetailScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(30.dp))
+                    Spacer(modifier = Modifier.height(26.dp))
+
+                    // Past Days Streak History Log (interactive 14 days)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "Past Streak History (Last 14 Days)",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = SparkTextPrimary
+                        )
+                        Text(
+                            text = "Tap to toggle",
+                            fontSize = 11.sp,
+                            color = SparkTextSecondary
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    val past14Days = (13 downTo 0).map { offset ->
+                        today.minusDays(offset.toLong())
+                    }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(16.dp))
+                            .background(Color(0xFFFCF9F6))
+                            .border(1.dp, Color(0xFFF2EBE5), RoundedCornerShape(16.dp))
+                            .padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        past14Days.chunked(7).forEach { weekChunk ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                weekChunk.forEach { date ->
+                                    val dayEpoch = date.toEpochDay()
+                                    val isDone = habitWithStats.recentCompletions.contains(dayEpoch)
+                                    val isCurrentToday = date == today
+
+                                    Column(
+                                        horizontalAlignment = Alignment.CenterHorizontally,
+                                        modifier = Modifier
+                                            .clip(RoundedCornerShape(12.dp))
+                                            .background(if (isDone) SparkPeachLight else Color.White)
+                                            .border(
+                                                1.dp,
+                                                if (isCurrentToday) SparkOrange else Color(0xFFEEE5DE),
+                                                RoundedCornerShape(12.dp)
+                                            )
+                                            .clickable {
+                                                if (onToggleDay != null) {
+                                                    onToggleDay(dayEpoch)
+                                                } else if (isCurrentToday) {
+                                                    onToggleComplete()
+                                                }
+                                            }
+                                            .padding(horizontal = 6.dp, vertical = 6.dp)
+                                    ) {
+                                        Text(
+                                            text = date.dayOfWeek.name.take(1),
+                                            fontSize = 9.sp,
+                                            fontWeight = if (isCurrentToday) FontWeight.Bold else FontWeight.Normal,
+                                            color = if (isDone) SparkFlame else SparkTextSecondary
+                                        )
+                                        Spacer(modifier = Modifier.height(3.dp))
+                                        Box(
+                                            modifier = Modifier
+                                                .size(20.dp)
+                                                .clip(CircleShape)
+                                                .background(if (isDone) SparkOrange else Color(0xFFEDE5DF)),
+                                            contentAlignment = Alignment.Center
+                                        ) {
+                                            if (isDone) {
+                                                SparkFlameIcon(size = 11.dp, tint = Color.White)
+                                            } else {
+                                                Text(
+                                                    text = "${date.dayOfMonth}",
+                                                    fontSize = 8.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = Color(0xFF7A6B63)
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(26.dp))
 
                     // Completion Toggle Button
                     Button(

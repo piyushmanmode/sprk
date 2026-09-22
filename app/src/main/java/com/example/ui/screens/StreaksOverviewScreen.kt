@@ -21,8 +21,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -57,6 +59,7 @@ import com.example.ui.theme.SparkTextSecondary
 import java.time.LocalDate
 import java.time.YearMonth
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
 @Composable
 fun StreaksOverviewScreen(
@@ -64,9 +67,11 @@ fun StreaksOverviewScreen(
     trophies: List<Trophy>,
     onTrophyClick: (Trophy) -> Unit,
     onBack: (() -> Unit)? = null,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onToggleHabitForDate: ((Long, Long) -> Unit)? = null
 ) {
     var selectedMonthOffset by remember { mutableStateOf(0) }
+    var selectedCalendarDate by remember { mutableStateOf<LocalDate?>(null) }
     val baseMonth = YearMonth.now().plusMonths(selectedMonthOffset.toLong())
     val monthName = baseMonth.month.name.lowercase().replaceFirstChar { it.uppercase() }
     val daysInMonth = baseMonth.lengthOfMonth()
@@ -242,11 +247,16 @@ fun StreaksOverviewScreen(
                                         if (dayNumber in 1..daysInMonth) {
                                             val date = baseMonth.atDay(dayNumber)
                                             val isCompleted = allCompletedEpochDays.contains(date.toEpochDay())
+                                            val isSelected = selectedCalendarDate == date
 
                                             Box(
                                                 modifier = Modifier
                                                     .weight(1f)
-                                                    .height(38.dp),
+                                                    .height(38.dp)
+                                                    .clip(CircleShape)
+                                                    .clickable {
+                                                        selectedCalendarDate = if (isSelected) null else date
+                                                    },
                                                 contentAlignment = Alignment.Center
                                             ) {
                                                 if (isCompleted) {
@@ -255,18 +265,31 @@ fun StreaksOverviewScreen(
                                                         modifier = Modifier
                                                             .size(34.dp)
                                                             .clip(CircleShape)
-                                                            .background(SparkOrange),
+                                                            .background(SparkOrange)
+                                                            .then(
+                                                                if (isSelected) {
+                                                                    Modifier.background(Color(0xFFE65100))
+                                                                } else Modifier
+                                                            ),
                                                         contentAlignment = Alignment.Center
                                                     ) {
                                                         SparkFlameIcon(size = 18.dp, tint = Color.White)
                                                     }
                                                 } else {
-                                                    Text(
-                                                        text = String.format("%02d", dayNumber),
-                                                        fontSize = 13.sp,
-                                                        color = Color(0xFF6B5C55),
-                                                        fontWeight = FontWeight.Medium
-                                                    )
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .size(32.dp)
+                                                            .clip(CircleShape)
+                                                            .background(if (isSelected) SparkPeachLight else Color.Transparent),
+                                                        contentAlignment = Alignment.Center
+                                                    ) {
+                                                        Text(
+                                                            text = String.format("%02d", dayNumber),
+                                                            fontSize = 13.sp,
+                                                            color = if (isSelected) SparkFlame else Color(0xFF6B5C55),
+                                                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                                                        )
+                                                    }
                                                 }
                                             }
                                         } else {
@@ -275,6 +298,111 @@ fun StreaksOverviewScreen(
                                                     .weight(1f)
                                                     .height(38.dp)
                                             )
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    // Selected Calendar Day Inspector Card
+                    selectedCalendarDate?.let { date ->
+                        val dateEpoch = date.toEpochDay()
+                        val doneCount = habits.count { it.recentCompletions.contains(dateEpoch) }
+
+                        item {
+                            Card(
+                                shape = RoundedCornerShape(20.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF9F5)),
+                                border = BorderStroke(1.dp, Color(0xFFFFD9C7)),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp)
+                                ) {
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Column {
+                                            Text(
+                                                text = date.format(DateTimeFormatter.ofPattern("EEEE, MMM d")),
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = SparkTextPrimary
+                                            )
+                                            Text(
+                                                text = "$doneCount/${habits.size} habits completed on this day",
+                                                fontSize = 12.sp,
+                                                color = SparkTextSecondary
+                                            )
+                                        }
+
+                                        IconButton(
+                                            onClick = { selectedCalendarDate = null },
+                                            modifier = Modifier.size(28.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.Close,
+                                                contentDescription = "Close",
+                                                tint = SparkTextSecondary,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                        }
+                                    }
+
+                                    Spacer(modifier = Modifier.height(12.dp))
+
+                                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                        habits.forEach { habitWithStats ->
+                                            val isHabitDoneOnDate = habitWithStats.recentCompletions.contains(dateEpoch)
+
+                                            Row(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .clip(RoundedCornerShape(12.dp))
+                                                    .background(Color.White)
+                                                    .clickable {
+                                                        onToggleHabitForDate?.invoke(habitWithStats.habit.id, dateEpoch)
+                                                    }
+                                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                                horizontalArrangement = Arrangement.SpaceBetween,
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                Column(modifier = Modifier.weight(1f)) {
+                                                    Text(
+                                                        text = habitWithStats.habit.title,
+                                                        fontSize = 14.sp,
+                                                        fontWeight = FontWeight.SemiBold,
+                                                        color = SparkTextPrimary
+                                                    )
+                                                    Text(
+                                                        text = habitWithStats.habit.category,
+                                                        fontSize = 11.sp,
+                                                        color = SparkTextSecondary
+                                                    )
+                                                }
+
+                                                Box(
+                                                    modifier = Modifier
+                                                        .size(26.dp)
+                                                        .clip(RoundedCornerShape(8.dp))
+                                                        .background(if (isHabitDoneOnDate) SparkOrange else Color(0xFFF4ECE7)),
+                                                    contentAlignment = Alignment.Center
+                                                ) {
+                                                    if (isHabitDoneOnDate) {
+                                                        Icon(
+                                                            imageVector = Icons.Filled.Check,
+                                                            contentDescription = "Done",
+                                                            tint = Color.White,
+                                                            modifier = Modifier.size(16.dp)
+                                                        )
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }

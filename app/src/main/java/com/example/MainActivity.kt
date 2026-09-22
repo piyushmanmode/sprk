@@ -82,7 +82,8 @@ fun SparkApp(
             habitWithStats = habitWithStats,
             onBack = { viewModel.selectHabitDetail(null) },
             onToggleComplete = { viewModel.toggleHabitCompletion(habitWithStats.habit.id) },
-            onDelete = { viewModel.deleteHabit(habitWithStats.habit.id) }
+            onDelete = { viewModel.deleteHabit(habitWithStats.habit.id) },
+            onToggleDay = { epochDay -> viewModel.toggleHabitCompletionForDate(habitWithStats.habit.id, epochDay) }
         )
         return
     }
@@ -106,7 +107,8 @@ fun SparkApp(
             habits = uiState.habits,
             trophies = uiState.trophies,
             onTrophyClick = { trophy -> viewModel.selectTrophyShare(trophy) },
-            onBack = { viewModel.setShowStreaksOverview(false) }
+            onBack = { viewModel.setShowStreaksOverview(false) },
+            onToggleHabitForDate = { habitId, dateEpoch -> viewModel.toggleHabitCompletionForDate(habitId, dateEpoch) }
         )
         return
     }
@@ -152,9 +154,12 @@ fun SparkApp(
                         HomeScreen(
                             userName = uiState.userName,
                             habits = uiState.habits,
+                            selectedEpochDay = uiState.selectedDateEpochDay,
+                            onSelectDate = { epochDay -> viewModel.setSelectedDate(epochDay) },
                             onAvatarClick = { viewModel.setTab(NavTab.PROFILE) },
                             onCardClick = { habitWithStats -> viewModel.selectHabitDetail(habitWithStats) },
                             onToggleComplete = { habitId -> viewModel.toggleHabitCompletion(habitId) },
+                            onToggleDay = { habitId, epochDay -> viewModel.toggleHabitCompletionForDate(habitId, epochDay) },
                             onAddHabitClick = { viewModel.showCreateStreak(true) },
                             onWidgetOptionsClick = { viewModel.setShowWidgetOptions(true) }
                         )

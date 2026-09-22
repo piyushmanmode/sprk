@@ -3,6 +3,7 @@ package com.example.ui.components
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
@@ -19,6 +20,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
@@ -40,21 +42,33 @@ import com.example.ui.theme.SparkOrange
 import com.example.ui.theme.SparkPeachLight
 import com.example.ui.theme.SparkTextPrimary
 import com.example.ui.theme.SparkTextSecondary
+import java.time.LocalDate
+import java.time.ZoneId
 
 @Composable
 fun HabitCard(
     habitWithStats: HabitWithStats,
     onCardClick: () -> Unit,
     onToggleComplete: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    selectedEpochDay: Long = LocalDate.now(ZoneId.systemDefault()).toEpochDay(),
+    onToggleDay: ((Long) -> Unit)? = null
 ) {
     val habit = habitWithStats.habit
-    val isDone = habitWithStats.isCompletedToday
+    val isDoneForSelectedDay = habitWithStats.recentCompletions.contains(selectedEpochDay)
+    val today = LocalDate.now(ZoneId.systemDefault())
+    val todayEpochDay = today.toEpochDay()
+    val isViewingToday = selectedEpochDay == todayEpochDay
 
     val checkboxBg by animateColorAsState(
-        targetValue = if (isDone) SparkOrange else Color.Transparent,
+        targetValue = if (isDoneForSelectedDay) SparkOrange else Color.Transparent,
         label = "checkboxBg"
     )
+
+    // Last 7 days for visual past streak history
+    val past7Days = remember(todayEpochDay) {
+        (6 downTo 0).map { today.minusDays(it.toLong()) }
+    }
 
     Card(
         shape = RoundedCornerShape(22.dp),
@@ -70,35 +84,65 @@ fun HabitCard(
                 .fillMaxWidth()
                 .padding(18.dp)
         ) {
-            // Header row: Streak pill badge and Checkbox
+            // Header row: Streak pill badge, best milestone pill, and Checkbox
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Streak badge: Flame icon + "X Days Streaks"
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(20.dp))
-                        .background(SparkPeachLight)
-                        .padding(horizontal = 10.dp, vertical = 5.dp)
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
-                    SparkFlameIcon(size = 14.dp, tint = SparkFlame)
-                    Spacer(modifier = Modifier.width(5.dp))
-                    Text(
-                        text = "${habitWithStats.currentStreak} Days Streaks",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = SparkFlame
-                    )
+                    // Active Streak badge
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(20.dp))
+                            .background(SparkPeachLight)
+                            .padding(horizontal = 10.dp, vertical = 5.dp)
+                    ) {
+                        SparkFlameIcon(size = 14.dp, tint = SparkFlame)
+                        Spacer(modifier = Modifier.width(5.dp))
+                        Text(
+                            text = "${habitWithStats.currentStreak} Days Streak",
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = SparkFlame
+                        )
+                    }
+
+                    // Best / Past Streak badge (shows if best streak > 0)
+                    if (habitWithStats.longestStreak > 0) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(20.dp))
+                                .background(Color(0xFFFFF3E0))
+                                .padding(horizontal = 8.dp, vertical = 5.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.EmojiEvents,
+                                contentDescription = null,
+                                tint = Color(0xFFF57C00),
+                                modifier = Modifier.size(13.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Best: ${habitWithStats.longestStreak}d",
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color(0xFFE65100)
+                            )
+                        }
+                    }
                 }
 
-                // Checkbox
+                // Checkbox for selected day
                 Box(
                     modifier = Modifier
-                        .size(28.dp)
-                        .clip(RoundedCornerShape(8.dp))
+                        .size(30.dp)
+                        .clip(RoundedCornerShape(9.dp))
                         .background(checkboxBg)
                         .clickable(
                             interactionSource = remember { MutableInteractionSource() },
@@ -106,19 +150,19 @@ fun HabitCard(
                             onClick = onToggleComplete
                         )
                         .then(
-                            if (!isDone) {
+                            if (!isDoneForSelectedDay) {
                                 Modifier.background(
                                     color = Color(0xFFF6EDE8),
-                                    shape = RoundedCornerShape(8.dp)
+                                    shape = RoundedCornerShape(9.dp)
                                 )
                             } else Modifier
                         ),
                     contentAlignment = Alignment.Center
                 ) {
-                    if (isDone) {
+                    if (isDoneForSelectedDay) {
                         Icon(
                             imageVector = Icons.Filled.Check,
-                            contentDescription = "Done for today",
+                            contentDescription = if (isViewingToday) "Done for today" else "Done for selected day",
                             tint = Color.White,
                             modifier = Modifier.size(18.dp)
                         )
@@ -126,7 +170,7 @@ fun HabitCard(
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Habit title
             Text(
@@ -137,7 +181,75 @@ fun HabitCard(
                 lineHeight = 22.sp
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 7-Day Past Streak Timeline Mini-Strip
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color(0xFFFDFBF9))
+                    .border(1.dp, Color(0xFFF2EAE5), RoundedCornerShape(14.dp))
+                    .padding(horizontal = 8.dp, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                past7Days.forEach { date ->
+                    val dayEpoch = date.toEpochDay()
+                    val isDayDone = habitWithStats.recentCompletions.contains(dayEpoch)
+                    val isThisDaySelected = dayEpoch == selectedEpochDay
+                    val dayLetter = date.dayOfWeek.name.take(1)
+
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(10.dp))
+                            .background(if (isThisDaySelected) SparkPeachLight else Color.Transparent)
+                            .clickable {
+                                if (onToggleDay != null) {
+                                    onToggleDay(dayEpoch)
+                                } else {
+                                    onCardClick()
+                                }
+                            }
+                            .padding(horizontal = 6.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = dayLetter,
+                            fontSize = 10.sp,
+                            fontWeight = if (isThisDaySelected) FontWeight.Bold else FontWeight.Medium,
+                            color = if (isDayDone) SparkFlame else SparkTextSecondary
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Box(
+                            modifier = Modifier
+                                .size(20.dp)
+                                .clip(CircleShape)
+                                .background(
+                                    when {
+                                        isDayDone -> SparkOrange
+                                        isThisDaySelected -> Color(0xFFF4DFD5)
+                                        else -> Color(0xFFECE4DF)
+                                    }
+                                ),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (isDayDone) {
+                                SparkFlameIcon(size = 11.dp, tint = Color.White)
+                            } else {
+                                Text(
+                                    text = "${date.dayOfMonth}",
+                                    fontSize = 9.sp,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Color(0xFF8D7F77)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Progress text & Heatmap
             Row(
