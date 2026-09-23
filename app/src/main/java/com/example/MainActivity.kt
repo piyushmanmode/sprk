@@ -149,9 +149,16 @@ fun SparkApp(
     // Welcome Screen (if not completed or previewed)
     if (!uiState.isOnboardingCompleted) {
         WelcomeScreen(
-            onGetStarted = { viewModel.setOnboardingCompleted(true) }
+            onGetStarted = { name, email ->
+                viewModel.setOnboardingCompleted(true, name, email)
+            }
         )
         return
+    }
+
+    // Main back handler: navigating back from other tabs goes to Home instead of exiting app
+    BackHandler(enabled = uiState.currentTab != NavTab.HOME) {
+        viewModel.setTab(NavTab.HOME)
     }
 
     // Main Scaffold with Bottom Navigation Bar
@@ -188,7 +195,10 @@ fun SparkApp(
                     NavTab.TROPHIES -> {
                         TrophiesScreen(
                             trophies = uiState.trophies,
-                            onTrophyClick = { trophy -> viewModel.selectTrophyShare(trophy) }
+                            habits = uiState.habits,
+                            onTrophyClick = { trophy -> viewModel.selectTrophyShare(trophy) },
+                            onBack = { viewModel.setTab(NavTab.HOME) },
+                            onShowStreaksOverview = { viewModel.setShowStreaksOverview(true) }
                         )
                     }
                     NavTab.CREATE -> {
@@ -208,7 +218,8 @@ fun SparkApp(
                                 viewModel.updateProfile(name, email, notifs)
                             },
                             onResetDemoData = { viewModel.resetDemoData() },
-                            onShowWelcome = { viewModel.setOnboardingCompleted(false) }
+                            onShowWelcome = { viewModel.setOnboardingCompleted(false) },
+                            onBack = { viewModel.setTab(NavTab.HOME) }
                         )
                     }
                 }

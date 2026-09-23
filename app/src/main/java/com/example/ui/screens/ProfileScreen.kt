@@ -22,6 +22,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -39,6 +40,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
@@ -86,12 +88,13 @@ fun ProfileScreen(
     onUpdateProfile: (name: String, email: String, notifications: Boolean) -> Unit,
     onResetDemoData: () -> Unit,
     onShowWelcome: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onBack: (() -> Unit)? = null
 ) {
     var showEditDialog by remember { mutableStateOf(false) }
     var showResetConfirmDialog by remember { mutableStateOf(false) }
-    var editName by remember { mutableStateOf(userName) }
-    var editEmail by remember { mutableStateOf(userEmail) }
+    var editName by remember(userName) { mutableStateOf(userName) }
+    var editEmail by remember(userEmail) { mutableStateOf(userEmail) }
 
     val activeStreakCount = habits.count { it.currentStreak > 0 }
     val unlockedTrophyCount = trophies.count { it.isUnlocked }
@@ -119,12 +122,30 @@ fun ProfileScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "Profile",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    if (onBack != null) {
+                        IconButton(
+                            onClick = onBack,
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(Color.White.copy(alpha = 0.22f))
+                        ) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = Color.White
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(10.dp))
+                    }
+                    Text(
+                        text = "Profile",
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White
+                    )
+                }
 
                 IconButton(
                     onClick = { showEditDialog = true },
@@ -186,11 +207,20 @@ fun ProfileScreen(
                             Spacer(modifier = Modifier.height(12.dp))
 
                             Text(
-                                text = userName,
+                                text = if (userName.isNotBlank()) userName else "Tap to set your name",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
                                 color = SparkTextPrimary
                             )
+
+                            if (userEmail.isNotBlank()) {
+                                Spacer(modifier = Modifier.height(2.dp))
+                                Text(
+                                    text = userEmail,
+                                    fontSize = 13.sp,
+                                    color = SparkTextSecondary
+                                )
+                            }
 
                             Spacer(modifier = Modifier.height(4.dp))
 
@@ -359,14 +389,44 @@ fun ProfileScreen(
                     OutlinedTextField(
                         value = editName,
                         onValueChange = { editName = it },
-                        label = { Text("Name") },
+                        label = { Text("Name", color = SparkTextSecondary) },
+                        placeholder = { Text("e.g. Alex Morgan", color = Color(0xFFA59891)) },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            color = Color(0xFF1E140F),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF1E140F),
+                            unfocusedTextColor = Color(0xFF1E140F),
+                            focusedBorderColor = SparkOrange,
+                            unfocusedBorderColor = SparkCardBorder,
+                            focusedContainerColor = SparkPeachLight.copy(alpha = 0.35f),
+                            unfocusedContainerColor = Color(0xFFFAF7F5),
+                            cursorColor = SparkOrange
+                        ),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )
                     OutlinedTextField(
                         value = editEmail,
                         onValueChange = { editEmail = it },
-                        label = { Text("Email") },
+                        label = { Text("Email", color = SparkTextSecondary) },
+                        placeholder = { Text("e.g. alex@example.com", color = Color(0xFFA59891)) },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            color = Color(0xFF1E140F),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF1E140F),
+                            unfocusedTextColor = Color(0xFF1E140F),
+                            focusedBorderColor = SparkOrange,
+                            unfocusedBorderColor = SparkCardBorder,
+                            focusedContainerColor = SparkPeachLight.copy(alpha = 0.35f),
+                            unfocusedContainerColor = Color(0xFFFAF7F5),
+                            cursorColor = SparkOrange
+                        ),
                         singleLine = true,
                         modifier = Modifier.fillMaxWidth()
                     )

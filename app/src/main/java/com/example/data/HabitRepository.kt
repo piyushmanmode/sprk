@@ -90,12 +90,16 @@ class HabitRepository(
         trophyDao.unlockTrophy(trophyId)
     }
 
-    private suspend fun checkAndUnlockTrophies() {
+    suspend fun checkAndUnlockTrophies() {
         val habitsWithStatsList = habitsWithStats.first()
         val maxStreak = habitsWithStatsList.maxOfOrNull { it.currentStreak } ?: 0
         val maxLongestStreak = habitsWithStatsList.maxOfOrNull { it.longestStreak } ?: 0
         val bestStreak = maxOf(maxStreak, maxLongestStreak)
 
+        // Global streak milestones
+        if (bestStreak >= 3) {
+            trophyDao.unlockTrophy("streak_3")
+        }
         if (bestStreak >= 7) {
             trophyDao.unlockTrophy("streak_7")
         }
@@ -107,6 +111,67 @@ class HabitRepository(
         }
         if (bestStreak >= 60) {
             trophyDao.unlockTrophy("streak_60")
+        }
+
+        // Habit-specific streak milestones
+        habitsWithStatsList.forEach { habitWithStats ->
+            val habit = habitWithStats.habit
+            val streak = maxOf(habitWithStats.currentStreak, habitWithStats.longestStreak)
+            if (streak >= 3) {
+                trophyDao.unlockTrophy("habit_${habit.id}_3")
+            }
+            if (streak >= 7) {
+                trophyDao.unlockTrophy("habit_${habit.id}_7")
+            }
+            if (streak >= 14) {
+                trophyDao.unlockTrophy("habit_${habit.id}_14")
+            }
+            if (streak >= 30) {
+                trophyDao.unlockTrophy("habit_${habit.id}_30")
+            }
+        }
+    }
+
+    suspend fun ensureTrophiesForHabits(habits: List<HabitWithStats>) {
+        if (habits.isEmpty()) return
+        val currentTrophies = trophyDao.getAllTrophies().first()
+        val currentIds = currentTrophies.map { it.id }.toSet()
+        val newTrophies = mutableListOf<Trophy>()
+
+        habits.forEach { habitWithStats ->
+            val habit = habitWithStats.habit
+            val streak = maxOf(habitWithStats.currentStreak, habitWithStats.longestStreak)
+
+            val milestones = listOf(
+                Triple(3, "3-Day Spark", "wreath_star"),
+                Triple(7, "7-Day Flame", "medal"),
+                Triple(14, "14-Day Blaze", "cup"),
+                Triple(30, "30-Day Master", "wreath_star")
+            )
+
+            milestones.forEach { (days, title, iconType) ->
+                val id = "habit_${habit.id}_$days"
+                if (!currentIds.contains(id)) {
+                    val isUnlocked = streak >= days
+                    newTrophies.add(
+                        Trophy(
+                            id = id,
+                            title = title,
+                            subtitle = "${habit.title} Milestone",
+                            description = "Reach a $days-day streak in ${habit.title}",
+                            requiredDays = days,
+                            habitTitle = habit.title,
+                            isUnlocked = isUnlocked,
+                            unlockedAtMillis = if (isUnlocked) System.currentTimeMillis() else null,
+                            iconType = iconType
+                        )
+                    )
+                }
+            }
+        }
+
+        if (newTrophies.isNotEmpty()) {
+            trophyDao.insertAll(newTrophies)
         }
     }
 
@@ -121,34 +186,45 @@ class HabitRepository(
         if (existingTrophies.isEmpty()) {
             val trophies = listOf(
                 Trophy(
-                    id = "streak_7",
-                    title = "7-Day Streak",
-                    subtitle = "7-Day Milestone Trophy",
-                    description = "Keep any habit streak alive for 7 consecutive days to unlock",
-                    requiredDays = 7,
-                    habitTitle = "7-Day Streak Goal",
+                    id = "streak_3",
+                    title = "3-Day Spark",
+                    subtitle = "First Spark Milestone",
+                    description = "Keep any habit streak alive for 3 consecutive days to unlock",
+                    requiredDays = 3,
+                    habitTitle = "Global Streak Milestones",
                     isUnlocked = false,
                     unlockedAtMillis = null,
                     iconType = "wreath_star"
                 ),
                 Trophy(
+                    id = "streak_7",
+                    title = "7-Day Flame",
+                    subtitle = "1-Week Consistency Flame",
+                    description = "Keep any habit streak alive for 7 consecutive days to unlock",
+                    requiredDays = 7,
+                    habitTitle = "Global Streak Milestones",
+                    isUnlocked = false,
+                    unlockedAtMillis = null,
+                    iconType = "medal"
+                ),
+                Trophy(
                     id = "streak_15",
-                    title = "15-Day Streak",
-                    subtitle = "15-Day Milestone Trophy",
+                    title = "15-Day Blaze",
+                    subtitle = "15-Day Consistency Trophy",
                     description = "Maintain unwavering consistency for 15 full days to unlock",
                     requiredDays = 15,
-                    habitTitle = "15-Day Streak Goal",
+                    habitTitle = "Global Streak Milestones",
                     isUnlocked = false,
                     unlockedAtMillis = null,
                     iconType = "medal"
                 ),
                 Trophy(
                     id = "streak_30",
-                    title = "30-Day Streak",
+                    title = "30-Day Legend",
                     subtitle = "Monthly Flame Champion",
                     description = "Achieve a monumental 30-day streak unbroken to unlock",
                     requiredDays = 30,
-                    habitTitle = "30-Day Streak Goal",
+                    habitTitle = "Global Streak Milestones",
                     isUnlocked = false,
                     unlockedAtMillis = null,
                     iconType = "cup"
@@ -156,10 +232,10 @@ class HabitRepository(
                 Trophy(
                     id = "streak_60",
                     title = "60-Day Grandmaster",
-                    subtitle = "60-Day Habit Achiever",
+                    subtitle = "Grandmaster Achiever",
                     description = "Complete an entire 60-day streak journey to true mastery to unlock",
                     requiredDays = 60,
-                    habitTitle = "60-Day Streak Goal",
+                    habitTitle = "Global Streak Milestones",
                     isUnlocked = false,
                     unlockedAtMillis = null,
                     iconType = "wreath_star"

@@ -172,6 +172,11 @@ fun CreateHabitSheet(
                             title = it
                             titleTouched = true
                         },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            color = Color(0xFF1E140F),
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
                         placeholder = { Text("e.g. Read 20 pages or Daily Workout", color = Color(0xFFAAA09A)) },
                         shape = RoundedCornerShape(16.dp),
                         isError = isTitleError,
@@ -179,10 +184,15 @@ fun CreateHabitSheet(
                             { Text("Habit title is required", color = Color(0xFFD32F2F), fontSize = 12.sp) }
                         } else null,
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF1E140F),
+                            unfocusedTextColor = Color(0xFF1E140F),
                             focusedBorderColor = SparkOrange,
                             unfocusedBorderColor = SparkCardBorder,
-                            focusedContainerColor = SparkPeachLight.copy(alpha = 0.3f),
+                            focusedContainerColor = SparkPeachLight.copy(alpha = 0.35f),
                             unfocusedContainerColor = Color(0xFFFAF7F5),
+                            cursorColor = SparkOrange,
+                            focusedPlaceholderColor = Color(0xFFAAA09A),
+                            unfocusedPlaceholderColor = Color(0xFFAAA09A),
                             errorBorderColor = Color(0xFFD32F2F)
                         ),
                         singleLine = true,
@@ -204,13 +214,22 @@ fun CreateHabitSheet(
                     OutlinedTextField(
                         value = description,
                         onValueChange = { description = it },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            color = Color(0xFF1E140F),
+                            fontSize = 14.sp
+                        ),
                         placeholder = { Text("e.g. To habituate growth as a designer", color = Color(0xFFAAA09A)) },
                         shape = RoundedCornerShape(16.dp),
                         colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color(0xFF1E140F),
+                            unfocusedTextColor = Color(0xFF1E140F),
                             focusedBorderColor = SparkOrange,
                             unfocusedBorderColor = SparkCardBorder,
-                            focusedContainerColor = SparkPeachLight.copy(alpha = 0.3f),
-                            unfocusedContainerColor = Color(0xFFFAF7F5)
+                            focusedContainerColor = SparkPeachLight.copy(alpha = 0.35f),
+                            unfocusedContainerColor = Color(0xFFFAF7F5),
+                            cursorColor = SparkOrange,
+                            focusedPlaceholderColor = Color(0xFFAAA09A),
+                            unfocusedPlaceholderColor = Color(0xFFAAA09A)
                         ),
                         maxLines = 3,
                         modifier = Modifier

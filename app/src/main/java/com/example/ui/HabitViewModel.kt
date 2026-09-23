@@ -35,10 +35,10 @@ data class SparkUiState(
     val showWidgetOptions: Boolean = false,
     val selectedHabitForDetail: HabitWithStats? = null,
     val selectedTrophyForShare: Trophy? = null,
-    val isOnboardingCompleted: Boolean = true,
+    val isOnboardingCompleted: Boolean = false,
     val profilePhotoPath: String? = null,
-    val userName: String = "Piyush",
-    val userEmail: String = "piyushmanmode64@gmail.com",
+    val userName: String = "",
+    val userEmail: String = "",
     val notificationsEnabled: Boolean = true,
     val reminderFrequency: String = "Daily",
     val reminderTime: String = "Mon-Sun 10:00 AM"
@@ -49,17 +49,32 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = HabitRepository(database.habitDao(), database.trophyDao())
     private val prefs = application.getSharedPreferences("spark_user_prefs", Context.MODE_PRIVATE)
 
-    private val _uiState = MutableStateFlow(
-        SparkUiState(
-            userName = prefs.getString("user_name", "Piyush") ?: "Piyush",
-            userEmail = prefs.getString("user_email", "piyushmanmode64@gmail.com") ?: "piyushmanmode64@gmail.com",
-            profilePhotoPath = prefs.getString("profile_photo_path", null)?.takeIf { File(it).exists() },
-            notificationsEnabled = prefs.getBoolean("notifications_enabled", true)
-        )
-    )
-    val uiState: StateFlow<SparkUiState> = _uiState.asStateFlow()
+    private val _uiState: MutableStateFlow<SparkUiState>
+    val uiState: StateFlow<SparkUiState>
 
     init {
+        // Scrub any legacy hardcoded credentials if previously saved
+        val rawSavedName = prefs.getString("user_name", "") ?: ""
+        val rawSavedEmail = prefs.getString("user_email", "") ?: ""
+        val cleanedName = if (rawSavedName.equals("Piyush", ignoreCase = true)) "" else rawSavedName
+        val cleanedEmail = if (rawSavedEmail.contains("piyush", ignoreCase = true)) "" else rawSavedEmail
+        if (rawSavedName != cleanedName || rawSavedEmail != cleanedEmail) {
+            prefs.edit().putString("user_name", cleanedName).putString("user_email", cleanedEmail).apply()
+        }
+
+        val hasCompletedOnboarding = prefs.getBoolean("onboarding_completed", false) && cleanedName.isNotBlank()
+
+        _uiState = MutableStateFlow(
+            SparkUiState(
+                userName = cleanedName,
+                userEmail = cleanedEmail,
+                isOnboardingCompleted = hasCompletedOnboarding,
+                profilePhotoPath = prefs.getString("profile_photo_path", null)?.takeIf { File(it).exists() },
+                notificationsEnabled = prefs.getBoolean("notifications_enabled", true)
+            )
+        )
+        uiState = _uiState.asStateFlow()
+
         com.example.reminder.HabitReminderScheduler.createNotificationChannel(application)
         viewModelScope.launch {
             // Seed initial trophy milestones if needed without clearing existing habits/completions
@@ -76,6 +91,10 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
             ) { habits, trophies ->
                 Pair(habits, trophies)
             }.collect { (habits, trophies) ->
+                // Ensure habit-specific milestone trophies exist for each habit
+                repository.ensureTrophiesForHabits(habits)
+                repository.checkAndUnlockTrophies()
+
                 _uiState.value = _uiState.value.copy(
                     habits = habits,
                     trophies = trophies,
@@ -191,7 +210,15 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun setOnboardingCompleted(completed: Boolean) {
+    fun setOnboardingCompleted(completed: Boolean, name: String = "", email: String = "") {
+        prefs.edit()
+            .putBoolean("onboarding_completed", completed)
+            .apply()
+        if (name.isNotBlank() || email.isNotBlank()) {
+            val updatedName = if (name.isNotBlank()) name.trim() else _uiState.value.userName
+            val updatedEmail = if (email.isNotBlank()) email.trim() else _uiState.value.userEmail
+            updateProfile(updatedName, updatedEmail, _uiState.value.notificationsEnabled)
+        }
         _uiState.value = _uiState.value.copy(isOnboardingCompleted = completed)
     }
 
