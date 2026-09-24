@@ -24,6 +24,16 @@ import java.io.File
 import java.time.LocalDate
 import java.time.ZoneId
 
+import com.example.data.CoachInsight
+import com.example.data.GeminiCoachRepository
+import com.example.data.HabitBreakdownSuggestion
+
+enum class CoachMode {
+    BREAKDOWN,
+    RECOVERY,
+    WEEKLY
+}
+
 data class SparkUiState(
     val habits: List<HabitWithStats> = emptyList(),
     val trophies: List<Trophy> = emptyList(),
@@ -41,12 +51,18 @@ data class SparkUiState(
     val userEmail: String = "",
     val notificationsEnabled: Boolean = true,
     val reminderFrequency: String = "Daily",
-    val reminderTime: String = "Mon-Sun 10:00 AM"
+    val reminderTime: String = "Mon-Sun 10:00 AM",
+    val isCoachLoading: Boolean = false,
+    val showCoachSheet: Boolean = false,
+    val coachMode: CoachMode = CoachMode.BREAKDOWN,
+    val coachGoalBreakdown: List<HabitBreakdownSuggestion> = emptyList(),
+    val coachCurrentInsight: CoachInsight? = null
 )
 
 class HabitViewModel(application: Application) : AndroidViewModel(application) {
     private val database = AppDatabase.getInstance(application)
     private val repository = HabitRepository(database.habitDao(), database.trophyDao())
+    private val coachRepository = GeminiCoachRepository(application)
     private val prefs = application.getSharedPreferences("spark_user_prefs", Context.MODE_PRIVATE)
 
     private val _uiState: MutableStateFlow<SparkUiState>
@@ -282,5 +298,67 @@ class HabitViewModel(application: Application) : AndroidViewModel(application) {
             repository.seedInitialDataIfEmpty()
             com.example.widget.WidgetUpdater.updateAllWidgets(getApplication())
         }
+    }
+
+    fun openCoach(mode: CoachMode = CoachMode.BREAKDOWN) {
+        _uiState.value = _uiState.value.copy(showCoachSheet = true, coachMode = mode)
+        if (mode == CoachMode.WEEKLY && _uiState.value.coachCurrentInsight == null) {
+            requestWeeklyInsights()
+        }
+    }
+
+    fun dismissCoach() {
+        _uiState.value = _uiState.value.copy(showCoachSheet = false)
+    }
+
+    fun setCoachMode(mode: CoachMode) {
+        _uiState.value = _uiState.value.copy(coachMode = mode)
+        if (mode == CoachMode.WEEKLY && _uiState.value.coachCurrentInsight == null) {
+            requestWeeklyInsights()
+        }
+    }
+
+    fun requestGoalBreakdown(goal: String) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isCoachLoading = true)
+            val suggestions = coachRepository.breakdownGoal(goal)
+            _uiState.value = _uiState.value.copy(
+                isCoachLoading = false,
+                coachGoalBreakdown = suggestions
+            )
+        }
+    }
+
+    fun requestStreakRecovery(habitTitle: String, previousStreak: Int) {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isCoachLoading = true)
+            val insight = coachRepository.getStreakRecoveryEncouragement(habitTitle, previousStreak)
+            _uiState.value = _uiState.value.copy(
+                isCoachLoading = false,
+                coachCurrentInsight = insight
+            )
+        }
+    }
+
+    fun requestWeeklyInsights() {
+        viewModelScope.launch {
+            _uiState.value = _uiState.value.copy(isCoachLoading = true)
+            val insight = coachRepository.getWeeklyInsightSummary(_uiState.value.habits, _uiState.value.userName)
+            _uiState.value = _uiState.value.copy(
+                isCoachLoading = false,
+                coachCurrentInsight = insight
+            )
+        }
+    }
+
+    fun adoptSuggestion(suggestion: HabitBreakdownSuggestion) {
+        createHabit(
+            title = suggestion.title,
+            description = "${suggestion.action} (${suggestion.triggerCue})",
+            category = suggestion.category,
+            targetDays = suggestion.targetDays,
+            reminderFreq = "Daily",
+            reminderTime = suggestion.suggestedReminder
+        )
     }
 }

@@ -22,6 +22,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.ui.HabitViewModel
 import com.example.ui.components.NavTab
 import com.example.ui.components.SparkBottomNavBar
+import com.example.ui.screens.CoachBottomSheet
 import com.example.ui.screens.CompletionCelebrationDialog
 import com.example.ui.screens.CreateHabitSheet
 import com.example.ui.screens.HabitDetailScreen
@@ -182,9 +183,11 @@ fun SparkApp(
                         HomeScreen(
                             userName = uiState.userName,
                             habits = uiState.habits,
+                            profilePhotoPath = uiState.profilePhotoPath,
                             selectedEpochDay = uiState.selectedDateEpochDay,
                             onSelectDate = { epochDay -> viewModel.setSelectedDate(epochDay) },
                             onAvatarClick = { viewModel.setTab(NavTab.PROFILE) },
+                            onCoachClick = { viewModel.openCoach() },
                             onCardClick = { habitWithStats -> viewModel.selectHabitDetail(habitWithStats) },
                             onToggleComplete = { habitId -> viewModel.toggleHabitCompletion(habitId) },
                             onToggleDay = { habitId, epochDay -> viewModel.toggleHabitCompletionForDate(habitId, epochDay) },
@@ -208,12 +211,16 @@ fun SparkApp(
                         ProfileScreen(
                             userName = uiState.userName,
                             userEmail = uiState.userEmail,
+                            profilePhotoPath = uiState.profilePhotoPath,
                             notificationsEnabled = uiState.notificationsEnabled,
                             habits = uiState.habits,
                             trophies = uiState.trophies,
                             onNavigateTab = { tab -> viewModel.setTab(tab) },
                             onShowStreaksOverview = { viewModel.setShowStreaksOverview(true) },
                             onShowWidgetOptions = { viewModel.setShowWidgetOptions(true) },
+                            onOpenCoach = { viewModel.openCoach() },
+                            onSelectProfilePhoto = { uri -> viewModel.saveSelectedProfilePhoto(uri) },
+                            onRemoveProfilePhoto = { viewModel.removeProfilePhoto() },
                             onUpdateProfile = { name, email, notifs ->
                                 viewModel.updateProfile(name, email, notifs)
                             },
@@ -223,6 +230,26 @@ fun SparkApp(
                         )
                     }
                 }
+            }
+
+            // AI Habit Coach Bottom Sheet
+            if (uiState.showCoachSheet) {
+                CoachBottomSheet(
+                    coachMode = uiState.coachMode,
+                    isLoading = uiState.isCoachLoading,
+                    habits = uiState.habits,
+                    suggestions = uiState.coachGoalBreakdown,
+                    insight = uiState.coachCurrentInsight,
+                    onModeChange = { mode -> viewModel.setCoachMode(mode) },
+                    onBreakdownGoal = { goal -> viewModel.requestGoalBreakdown(goal) },
+                    onStreakRecovery = { title, streak -> viewModel.requestStreakRecovery(title, streak) },
+                    onWeeklyInsights = { viewModel.requestWeeklyInsights() },
+                    onAdoptSuggestion = { suggestion ->
+                        viewModel.adoptSuggestion(suggestion)
+                        viewModel.dismissCoach()
+                    },
+                    onDismiss = { viewModel.dismissCoach() }
+                )
             }
 
             // Streak Completion Celebration Dialog

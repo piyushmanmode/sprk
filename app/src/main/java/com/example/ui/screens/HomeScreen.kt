@@ -60,6 +60,19 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextOverflow
+import coil.compose.AsyncImage
+import com.example.ui.theme.SparkCardBorder
+import com.example.ui.theme.SparkTextPrimary
+import com.example.ui.theme.SparkTextSecondary
+import java.io.File
+
 @Composable
 fun HomeScreen(
     userName: String,
@@ -70,10 +83,13 @@ fun HomeScreen(
     onAddHabitClick: () -> Unit,
     onWidgetOptionsClick: () -> Unit,
     modifier: Modifier = Modifier,
+    profilePhotoPath: String? = null,
+    onCoachClick: () -> Unit = {},
     selectedEpochDay: Long = LocalDate.now(ZoneId.systemDefault()).toEpochDay(),
     onSelectDate: (Long) -> Unit = {},
     onToggleDay: ((Long, Long) -> Unit)? = null
 ) {
+    val context = LocalContext.current
     val greetingTime = when (LocalTime.now().hour) {
         in 5..11 -> "Good Morning"
         in 12..16 -> "Good Afternoon"
@@ -133,19 +149,45 @@ fun HomeScreen(
                         .clickable(onClick = onAvatarClick)
                         .testTag("home_avatar_button")
                 ) {
-                    Image(
-                        painter = painterResource(id = R.drawable.avatar_user),
-                        contentDescription = "User Profile",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
+                    val hasCustomPhoto = !profilePhotoPath.isNullOrBlank() && File(profilePhotoPath).exists()
+                    if (hasCustomPhoto) {
+                        AsyncImage(
+                            model = File(profilePhotoPath!!),
+                            contentDescription = "User Profile",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    } else {
+                        Image(
+                            painter = painterResource(id = R.drawable.avatar_user),
+                            contentDescription = "User Profile",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
                 }
 
-                // Action Icons (Widgets, Quick Streak & Menu)
+                // Action Icons (Coach, Widgets, Add Habit)
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    IconButton(
+                        onClick = onCoachClick,
+                        modifier = Modifier
+                            .size(38.dp)
+                            .clip(CircleShape)
+                            .background(Color.White.copy(alpha = 0.22f))
+                            .testTag("home_ai_coach_button")
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.AutoAwesome,
+                            contentDescription = "AI Coach",
+                            tint = Color.White,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+
                     IconButton(
                         onClick = onWidgetOptionsClick,
                         modifier = Modifier
@@ -358,19 +400,41 @@ fun HomeScreen(
                             color = Color(0xFF827067)
                         )
                         Spacer(modifier = Modifier.height(20.dp))
-                        Button(
-                            onClick = onAddHabitClick,
-                            colors = ButtonDefaults.buttonColors(containerColor = SparkOrange),
-                            shape = RoundedCornerShape(24.dp),
-                            modifier = Modifier.testTag("create_first_habit_button")
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Create Your First Habit", fontWeight = FontWeight.SemiBold)
+                            Button(
+                                onClick = onAddHabitClick,
+                                colors = ButtonDefaults.buttonColors(containerColor = SparkOrange),
+                                shape = RoundedCornerShape(24.dp),
+                                modifier = Modifier.testTag("create_first_habit_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(8.dp))
+                                Text("Create Habit", fontWeight = FontWeight.SemiBold)
+                            }
+
+                            Button(
+                                onClick = onCoachClick,
+                                colors = ButtonDefaults.buttonColors(containerColor = Color.White),
+                                border = BorderStroke(1.dp, SparkOrange),
+                                shape = RoundedCornerShape(24.dp),
+                                modifier = Modifier.testTag("empty_ai_coach_button")
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.AutoAwesome,
+                                    contentDescription = null,
+                                    tint = SparkOrange,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(modifier = Modifier.width(6.dp))
+                                Text("AI Coach", color = SparkOrange, fontWeight = FontWeight.Bold)
+                            }
                         }
                     }
                 }
@@ -382,6 +446,82 @@ fun HomeScreen(
                     contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 8.dp, bottom = 100.dp),
                     verticalArrangement = Arrangement.spacedBy(14.dp)
                 ) {
+                    // AI Habit Coach Card
+                    item(key = "ai_habit_coach_card") {
+                        Card(
+                            shape = RoundedCornerShape(20.dp),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            border = BorderStroke(1.dp, SparkCardBorder),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onCoachClick() }
+                                .testTag("ai_coach_card")
+                        ) {
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(14.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Box(
+                                        modifier = Modifier
+                                            .size(42.dp)
+                                            .clip(CircleShape)
+                                            .background(SparkPeachLight),
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        SparkFlameIcon(size = 22.dp, tint = SparkOrange)
+                                    }
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Column {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text(
+                                                text = "AI Habit Coach",
+                                                fontSize = 15.sp,
+                                                fontWeight = FontWeight.Bold,
+                                                color = SparkTextPrimary
+                                            )
+                                            Spacer(modifier = Modifier.width(6.dp))
+                                            Surface(
+                                                shape = RoundedCornerShape(6.dp),
+                                                color = SparkOrange.copy(alpha = 0.14f)
+                                            ) {
+                                                Text(
+                                                    text = "Gemini",
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = SparkOrange,
+                                                    modifier = Modifier.padding(horizontal = 5.dp, vertical = 1.dp)
+                                                )
+                                            }
+                                        }
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        Text(
+                                            text = "Break down goals • Streak recovery • Insights",
+                                            fontSize = 11.sp,
+                                            color = SparkTextSecondary,
+                                            maxLines = 1,
+                                            overflow = TextOverflow.Ellipsis
+                                        )
+                                    }
+                                }
+
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                                    contentDescription = "Open AI Coach",
+                                    tint = SparkOrange,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
+                    }
+
                     items(habits, key = { it.habit.id }) { habitWithStats ->
                         HabitCard(
                             habitWithStats = habitWithStats,

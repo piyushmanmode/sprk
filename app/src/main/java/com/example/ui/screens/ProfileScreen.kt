@@ -75,6 +75,16 @@ import com.example.ui.theme.SparkPeachLight
 import com.example.ui.theme.SparkTextPrimary
 import com.example.ui.theme.SparkTextSecondary
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.PhotoCamera
+import androidx.compose.ui.platform.LocalContext
+import coil.compose.AsyncImage
+import java.io.File
+
 @Composable
 fun ProfileScreen(
     userName: String,
@@ -89,8 +99,21 @@ fun ProfileScreen(
     onResetDemoData: () -> Unit,
     onShowWelcome: () -> Unit,
     modifier: Modifier = Modifier,
+    profilePhotoPath: String? = null,
+    onSelectProfilePhoto: (Uri) -> Unit = {},
+    onRemoveProfilePhoto: () -> Unit = {},
+    onOpenCoach: (() -> Unit)? = null,
     onBack: (() -> Unit)? = null
 ) {
+    val context = LocalContext.current
+    val photoPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia()
+    ) { uri: Uri? ->
+        if (uri != null) {
+            onSelectProfilePhoto(uri)
+        }
+    }
+
     var showEditDialog by remember { mutableStateOf(false) }
     var showResetConfirmDialog by remember { mutableStateOf(false) }
     var editName by remember(userName) { mutableStateOf(userName) }
@@ -183,34 +206,104 @@ fun ProfileScreen(
                     item {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showEditDialog = true }
+                            modifier = Modifier.fillMaxWidth()
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(90.dp)
+                                    .size(96.dp)
                                     .clip(CircleShape)
                                     .border(3.dp, SparkOrange, CircleShape)
-                                    .padding(3.dp)
+                                    .clickable {
+                                        photoPickerLauncher.launch(
+                                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                        )
+                                    }
+                                    .testTag("profile_avatar_picker"),
+                                contentAlignment = Alignment.Center
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.avatar_user),
-                                    contentDescription = "User Avatar",
-                                    contentScale = ContentScale.Crop,
+                                val hasCustomPhoto = !profilePhotoPath.isNullOrBlank() && File(profilePhotoPath).exists()
+                                if (hasCustomPhoto) {
+                                    AsyncImage(
+                                        model = File(profilePhotoPath!!),
+                                        contentDescription = "User Avatar",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                } else {
+                                    Image(
+                                        painter = painterResource(id = R.drawable.avatar_user),
+                                        contentDescription = "User Avatar",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .clip(CircleShape)
+                                    )
+                                }
+
+                                // Zero-permission Photo Picker badge
+                                Box(
                                     modifier = Modifier
-                                        .fillMaxSize()
+                                        .align(Alignment.BottomEnd)
+                                        .size(28.dp)
                                         .clip(CircleShape)
-                                )
+                                        .background(SparkOrange)
+                                        .border(2.dp, Color.White, CircleShape),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.PhotoCamera,
+                                        contentDescription = "Pick Profile Photo",
+                                        tint = Color.White,
+                                        modifier = Modifier.size(15.dp)
+                                    )
+                                }
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
+                            Spacer(modifier = Modifier.height(8.dp))
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center
+                            ) {
+                                Text(
+                                    text = "Tap photo to change (Zero-Permission)",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = SparkOrange,
+                                    modifier = Modifier
+                                        .clickable {
+                                            photoPickerLauncher.launch(
+                                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                            )
+                                        }
+                                        .testTag("change_photo_text")
+                                )
+                                if (!profilePhotoPath.isNullOrBlank() && File(profilePhotoPath).exists()) {
+                                    Text(
+                                        text = " • ",
+                                        fontSize = 11.sp,
+                                        color = SparkTextSecondary
+                                    )
+                                    Text(
+                                        text = "Remove",
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Color.Red.copy(alpha = 0.8f),
+                                        modifier = Modifier.clickable { onRemoveProfilePhoto() }
+                                    )
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(8.dp))
 
                             Text(
                                 text = if (userName.isNotBlank()) userName else "Tap to set your name",
                                 fontSize = 22.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = SparkTextPrimary
+                                color = SparkTextPrimary,
+                                modifier = Modifier.clickable { showEditDialog = true }
                             )
 
                             if (userEmail.isNotBlank()) {
@@ -234,6 +327,17 @@ fun ProfileScreen(
                     }
 
                     item { Spacer(modifier = Modifier.height(10.dp)) }
+
+                    if (onOpenCoach != null) {
+                        item {
+                            ProfileMenuCard(
+                                icon = Icons.Filled.AutoAwesome,
+                                title = "AI Habit Coach (Gemini)",
+                                subtitle = "Goal Breakdowns & Streak Recovery",
+                                onClick = onOpenCoach
+                            )
+                        }
+                    }
 
                     // Menu Item: Account Details
                     item {

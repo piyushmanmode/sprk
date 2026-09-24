@@ -30,6 +30,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.FormatListBulleted
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.CheckCircle
@@ -99,7 +100,7 @@ enum class WidgetType(
         title = "2. Tasks & Habits Widget",
         subtitle = "Check off daily habits directly from your home screen",
         defaultSize = "4 × 2 / 4 × 3",
-        icon = Icons.Filled.FormatListBulleted,
+        icon = Icons.AutoMirrored.Filled.FormatListBulleted,
         providerClass = TasksWidgetProvider::class.java
     ),
     FLAME_MOTIVATION(
